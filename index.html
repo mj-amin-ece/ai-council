@@ -9,57 +9,85 @@
 <style>
   :root {
     --bg: #f6f5f2; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6a66; --line: #e3e1db;
-    --accent: #2f5bd3; --accent-ink: #fff; --err: #b3261e;
+    --accent: #2f5bd3; --accent-ink: #fff; --err: #b3261e; --ok: #2e9e5b; --warn: #c98a12;
     --claude: #c96442; --chatgpt: #10a37f; --gemini: #4f7cf0;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #161614; --panel: #201f1d; --ink: #ecebe7; --muted: #9c9a94; --line: #34332f;
-      --accent: #6d8ff0; --accent-ink: #0d0d0c; --err: #f2867e;
+      --accent: #6d8ff0; --accent-ink: #0d0d0c; --err: #f2867e; --ok: #4cc27f; --warn: #e3ac3c;
     }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-  main { max-width: 1400px; margin: 0 auto; padding: 24px 16px 80px; }
+  main { max-width: 1400px; margin: 0 auto; padding: 24px 16px 40px; }
   h1 { margin: 0 0 4px; font-size: 24px; }
   .sub { color: var(--muted); margin: 0 0 20px; }
-  .models { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .model { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px;
-           border-top: 4px solid var(--c); }
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .model, .usage-box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+           border-top: 4px solid var(--c); min-width: 0; }
   .model label { display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
   .model select, .model input[type=text] { width: 100%; margin-top: 8px; }
-  .model .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
-  .model .hint code { font-size: 11px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .hint code { font-size: 11px; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-left: auto; }
-  .dot.ok { background: #2e9e5b; } .dot.no { background: var(--err); }
+  .dot.ok { background: var(--ok); } .dot.no { background: var(--err); }
   input[type=text], textarea, select {
     font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
     border-radius: 8px; padding: 8px 10px; }
-  textarea { width: 100%; min-height: 96px; resize: vertical; }
-  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 24px; }
+  textarea { width: 100%; min-height: 96px; resize: vertical; margin-top: 16px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 4px; }
   button { font: inherit; font-weight: 600; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
            border-radius: 8px; padding: 8px 14px; cursor: pointer; }
   button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.danger { color: var(--err); border-color: var(--err); }
+  button.small { font-size: 12px; padding: 3px 9px; font-weight: 500; }
   button:disabled { opacity: .45; cursor: default; }
-  .round h2 { font-size: 16px; margin: 28px 0 10px; display: flex; gap: 10px; align-items: baseline; }
+  #estimate { min-height: 18px; margin-bottom: 18px; }
+
+  /* usage panel */
+  details.panel { margin-bottom: 16px; }
+  details.panel > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+  details.panel > summary small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+  .usage-box h3 { margin: 0 0 8px; font-size: 15px; display: flex; justify-content: space-between; }
+  .usage-box h3 small { color: var(--muted); font-weight: 400; font-size: 12px; }
+  .limit { margin: 10px 0; }
+  .limit-head { display: flex; justify-content: space-between; font-size: 13px; gap: 8px; }
+  .limit-head b { font-weight: 600; }
+  .meter { height: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+  .meter i { display: block; height: 100%; background: var(--ok); border-radius: 99px; }
+  .meter i.warn { background: var(--warn); } .meter i.high { background: var(--err); }
+  table.usage { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 10px; }
+  table.usage th { text-align: right; color: var(--muted); font-weight: 500; padding: 3px 4px; border-bottom: 1px solid var(--line); }
+  table.usage th:first-child, table.usage td:first-child { text-align: left; }
+  table.usage td { text-align: right; padding: 4px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  table.usage td:first-child { overflow-wrap: anywhere; }
+  table.usage td small { display: block; color: var(--muted); font-size: 11px; }
+  .note { font-size: 12px; color: var(--muted); }
+
+  /* rounds */
+  .round h2 { font-size: 16px; margin: 28px 0 10px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
   .round h2 small { color: var(--muted); font-weight: 400; }
   .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
           border-top: 4px solid var(--c); min-width: 0; }
-  .card header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .card header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
   .card header b { font-size: 15px; }
-  .card header span { color: var(--muted); font-size: 12px; }
+  .card header .model-name { color: var(--muted); font-size: 12px; margin-left: 6px; font-weight: 400; }
+  .card header .meta { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
   .card .body { overflow-wrap: anywhere; }
   .card .body pre { overflow-x: auto; background: var(--bg); padding: 10px; border-radius: 6px; }
   .card .body :is(h1,h2,h3) { font-size: 15px; }
+  .card .body table { border-collapse: collapse; display: block; overflow-x: auto; }
+  .card .body th, .card .body td { border: 1px solid var(--line); padding: 4px 8px; }
   .card .err { color: var(--err); white-space: pre-wrap; font-size: 13px; }
+  .card .actions { display: flex; gap: 6px; margin-top: 10px; }
   details.review { background: var(--bg); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; }
   details.review summary { cursor: pointer; font-weight: 600; color: var(--muted); }
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--line);
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line);
              border-top-color: var(--c); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: -2px; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .final { border-top-width: 4px; }
   .empty { color: var(--muted); text-align: center; padding: 40px 0; }
   footer { margin-top: 60px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted);
            font-size: 13px; text-align: center; }
@@ -71,19 +99,32 @@
   <h1>AI Council</h1>
   <p class="sub">Ask Claude, ChatGPT and Gemini the same question. Then let them review each other's answers and improve, round after round.</p>
 
-  <section class="models" id="models"></section>
+  <section class="grid3" id="models"></section>
 
   <textarea id="question" placeholder="Ask your question…  (Cmd+Enter to send)"></textarea>
   <div class="bar">
     <button class="primary" id="askBtn">Ask selected models</button>
     <button id="reviewBtn" disabled>Review &amp; improve (next round)</button>
+    <button class="danger" id="stopBtn" hidden>Stop</button>
     <span style="flex:1"></span>
     <label>Final answer by
       <select id="judge"></select>
     </label>
     <button id="finalBtn" disabled>Write final answer</button>
+    <button id="exportBtn" disabled title="Download the whole discussion as a Markdown file">Export</button>
     <button id="resetBtn">New question</button>
   </div>
+  <div class="hint" id="estimate"></div>
+
+  <details class="panel" id="usagePanel">
+    <summary>Usage &amp; limits <small id="usageSummary"></small></summary>
+    <section class="grid3" id="usage"></section>
+    <p class="note">
+      Token counts come from each CLI after every answer; <b>~</b> marks an estimate (about 4 characters per token)
+      when a CLI doesn't report them. "Used / left" bars are your subscription limits as reported by the CLI.
+      <button class="small" id="resetUsageBtn">Clear history</button>
+    </p>
+  </details>
 
   <section id="rounds"><p class="empty">Answers will appear here.</p></section>
 
@@ -95,17 +136,25 @@
 
 <script>
 const PROVIDERS = [
-  { key: "claude",  label: "Claude",  color: "var(--claude)" },
-  { key: "chatgpt", label: "ChatGPT", color: "var(--chatgpt)" },
-  { key: "gemini",  label: "Gemini",  color: "var(--gemini)" },
+  { key: "claude",  label: "Claude",  color: "var(--claude)",
+    noLimits: `Shown after your first Claude answer. Full details: <a href="https://claude.ai/settings/usage" target="_blank" rel="noopener">claude.ai/settings/usage</a>` },
+  { key: "chatgpt", label: "ChatGPT", color: "var(--chatgpt)",
+    noLimits: "The Codex CLI doesn't report remaining limits here. To see them, run <code>codex</code> in Terminal and type <code>/status</code>." },
+  { key: "gemini",  label: "Gemini",  color: "var(--gemini)",
+    noLimits: "The Gemini CLI doesn't report remaining quota. Google applies daily request limits per model." },
 ];
 const byKey = Object.fromEntries(PROVIDERS.map(p => [p.key, p]));
 const $ = id => document.getElementById(id);
+const OTHER = "__other__";
+const SESSION_KEY = "ai-council-session";
 
 let question = "";
-let rounds = [];   // [{ title, note, results: { key: { status, text, review, answer, error, seconds } } }]
-let finalResult = null;
+let rounds = [];      // [{ title, note, review: bool, results: { key: Result } }]
+let finalResult = null; // Result + { key }
+// Result = { status: running|done|error, prompt, start, text, review, answer, error, seconds, usage }
 let busy = false;
+let installed = {};
+let usageData = null;
 
 // ---------- settings (remembered in this browser) ----------
 const saved = (() => { try { return JSON.parse(localStorage.getItem("ai-council") || "{}"); } catch { return {}; } })();
@@ -113,6 +162,7 @@ function saveSettings() {
   const s = {};
   for (const p of PROVIDERS) s[p.key] = { on: $("on-" + p.key).checked, model: getModel(p.key) };
   s.judge = $("judge").value;
+  s.usageOpen = $("usagePanel").open;
   try { localStorage.setItem("ai-council", JSON.stringify(s)); } catch {}
 }
 
@@ -133,12 +183,14 @@ function buildModelPickers() {
   }
   $("judge").innerHTML = PROVIDERS.map(p => `<option value="${p.key}">${p.label}</option>`).join("");
   if (saved.judge) $("judge").value = saved.judge;
-  document.querySelectorAll("#models input, #models select, #judge").forEach(el => el.addEventListener("change", saveSettings));
+  if (saved.usageOpen) $("usagePanel").open = true;
+  document.querySelectorAll("#models input, #models select, #judge").forEach(el => el.addEventListener("change", () => {
+    saveSettings(); updateEstimate();
+  }));
+  $("usagePanel").addEventListener("toggle", saveSettings);
 }
 
 // ---------- model dropdowns (lists come from server.py) ----------
-const OTHER = "__other__";
-
 function getModel(key) {
   const v = $("model-" + key).value;
   return v === OTHER ? $("custom-" + key).value.trim() : v;
@@ -158,6 +210,7 @@ async function checkStatus() {
     const s = await (await fetch("/api/status")).json();
     for (const p of PROVIDERS) {
       const st = s[p.key], dot = $("dot-" + p.key);
+      installed[p.key] = st.installed;
       fillModels(p.key, st.models || []);
       dot.className = "dot " + (st.installed ? "ok" : "no");
       dot.title = st.installed ? "CLI found" : "Not installed";
@@ -166,7 +219,15 @@ async function checkStatus() {
         $("on-" + p.key).checked = false;
       }
     }
-  } catch { /* server offline: leave dots grey */ }
+    // Default the final-answer writer to a model that is actually installed.
+    if (!installed[$("judge").value]) {
+      const first = PROVIDERS.find(p => installed[p.key]);
+      if (first) $("judge").value = first.key;
+    }
+  } catch {
+    for (const p of PROVIDERS) $("hint-" + p.key).textContent = "Server not reachable. Is server.py running?";
+  }
+  updateEstimate();
 }
 
 // ---------- prompts ----------
@@ -180,7 +241,7 @@ function reviewPrompt(me, q, prev) {
   for (const k of others) s += `=== ANSWER FROM ${byKey[k].label.toUpperCase()} ===\n${prev[k]}\n\n`;
   s += `=== YOUR TASK ===\n` +
     `1. Review: for each other answer, briefly point out factual errors, weak reasoning, missing points, and anything it does better than yours. Be honest. If they are right and you were wrong, say so.\n` +
-    `2. Improved answer: write your best, complete, standalone answer to the question. Keep what was right, fix what was wrong, and adopt the strongest ideas from the others.\n\n` +
+    `2. Improved answer: write your best, complete, standalone answer to the question. Keep what was right, fix what was wrong, and adopt the strongest ideas from the others. Don't mention the review or the other assistants in this part.\n\n` +
     `Use exactly these two headings:\n## Review\n...\n## Improved answer\n...`;
   return s;
 }
@@ -190,7 +251,8 @@ function finalPrompt(q, prev, n) {
     `=== QUESTION ===\n${q}\n\n`;
   for (const k of Object.keys(prev)) s += `=== LATEST ANSWER FROM ${byKey[k].label.toUpperCase()} ===\n${prev[k]}\n\n`;
   s += `=== YOUR TASK ===\nWrite the single best final answer to the question, combining the strongest, correct points from all answers. ` +
-    `Then add a short section "## Where they disagreed" listing any remaining disagreements and which view you think is right and why.`;
+    `Then add a short section "## Where they disagreed" listing any remaining disagreements and which view you think is right and why ` +
+    `(write "None" if they agree).`;
   return s;
 }
 
@@ -201,13 +263,33 @@ function splitReview(text) {
   return { review, answer: text.slice(m.index + m[0].length).trim() };
 }
 
-// ---------- running ----------
-async function ask(key, prompt) {
-  const res = await fetch("/api/ask", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider: key, prompt, model: getModel(key) }),
+// ---------- talking to the server ----------
+async function post(path, body) {
+  const res = await fetch(path, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}),
   });
+  if (!res.ok) throw new Error(`Server replied ${res.status}`);
   return res.json();
+}
+
+// Runs one request and fills in the Result object r.
+async function runOne(key, r, isReview) {
+  Object.assign(r, { status: "running", start: Date.now(), error: undefined, usage: undefined, seconds: undefined });
+  render();
+  try {
+    const data = await post("/api/ask", { provider: key, prompt: r.prompt, model: getModel(key) });
+    if (data.error) Object.assign(r, { status: "error", error: data.error });
+    else {
+      const parts = isReview ? splitReview(data.text) : { review: "", answer: data.text };
+      Object.assign(r, { status: "done", text: data.text, ...parts, usage: data.usage });
+    }
+    r.seconds = data.seconds;
+  } catch (e) {
+    Object.assign(r, { status: "error", error: "Could not reach the server. Is server.py running?\n" + e });
+  }
+  r.seconds ??= ((Date.now() - r.start) / 1000).toFixed(1);
+  render();
+  loadUsage();
 }
 
 function latestAnswers() {
@@ -219,34 +301,23 @@ function latestAnswers() {
 }
 
 async function runRound(title, note, keys, makePrompt, isReview) {
-  const round = { title, note, results: {} };
-  for (const k of keys) round.results[k] = { status: "running" };
+  const round = { title, note, review: isReview, results: {} };
+  for (const k of keys) round.results[k] = { prompt: makePrompt(k) };
   rounds.push(round);
-  render();
-  await Promise.all(keys.map(async k => {
-    const t0 = Date.now();
-    const r = round.results[k];
-    try {
-      const data = await ask(k, makePrompt(k));
-      if (data.error) Object.assign(r, { status: "error", error: data.error });
-      else {
-        const parts = isReview ? splitReview(data.text) : { review: "", answer: data.text };
-        Object.assign(r, { status: "done", text: data.text, ...parts, seconds: data.seconds });
-      }
-    } catch (e) {
-      Object.assign(r, { status: "error", error: "Could not reach the server. Is server.py running?\n" + e });
-    }
-    r.seconds ??= ((Date.now() - t0) / 1000).toFixed(1);
-    render();
-  }));
+  await Promise.all(keys.map(k => runOne(k, round.results[k], isReview)));
 }
 
 function selectedKeys() { return PROVIDERS.map(p => p.key).filter(k => $("on-" + k).checked); }
 
+function reviewKeys() {
+  const prev = latestAnswers();
+  return Object.keys(prev).filter(k => $("on-" + k).checked);
+}
+
 async function guard(fn) {
   if (busy) return;
   busy = true; updateButtons();
-  try { await fn(); } finally { busy = false; updateButtons(); }
+  try { await fn(); } finally { busy = false; updateButtons(); updateEstimate(); }
 }
 
 $("askBtn").onclick = () => guard(async () => {
@@ -254,14 +325,15 @@ $("askBtn").onclick = () => guard(async () => {
   const keys = selectedKeys();
   if (!q) return $("question").focus();
   if (!keys.length) return alert("Select at least one model.");
+  if (rounds.length && !confirm("Start a new discussion? The current one will be replaced (use Export to keep it).")) return;
   question = q; rounds = []; finalResult = null;
   await runRound("Round 1", "First answers", keys, () => firstPrompt(q), false);
 });
 
 $("reviewBtn").onclick = () => guard(async () => {
+  const keys = reviewKeys();
+  if (keys.length < 2) return alert("Need at least two selected models with answers to review each other.");
   const prev = latestAnswers();
-  const keys = Object.keys(prev).filter(k => $("on-" + k).checked);
-  if (keys.length < 2) return alert("Need at least two models with answers to review each other.");
   const ctx = Object.fromEntries(keys.map(k => [k, prev[k]]));
   finalResult = null;
   await runRound(`Round ${rounds.length + 1}`, "Each model reviews the others and improves its answer",
@@ -269,17 +341,12 @@ $("reviewBtn").onclick = () => guard(async () => {
 });
 
 $("finalBtn").onclick = () => guard(async () => {
-  const prev = latestAnswers();
   const judge = $("judge").value;
-  finalResult = { key: judge, status: "running" };
-  render();
-  try {
-    const data = await ask(judge, finalPrompt(question, prev, rounds.length));
-    finalResult = data.error ? { key: judge, status: "error", error: data.error }
-                             : { key: judge, status: "done", answer: data.text, seconds: data.seconds };
-  } catch (e) { finalResult = { key: judge, status: "error", error: String(e) }; }
-  render();
+  finalResult = { key: judge, prompt: finalPrompt(question, latestAnswers(), rounds.length) };
+  await runOne(judge, finalResult, false);
 });
+
+$("stopBtn").onclick = () => post("/api/cancel").catch(() => {});
 
 $("resetBtn").onclick = () => {
   if (busy) return;
@@ -288,16 +355,142 @@ $("resetBtn").onclick = () => {
   render();
 };
 
+$("exportBtn").onclick = () => {
+  const blob = new Blob([toMarkdown()], { type: "text/markdown" });
+  const a = document.createElement("a");
+  const d = new Date(), pad = n => String(n).padStart(2, "0");
+  a.href = URL.createObjectURL(blob);
+  a.download = `ai-council-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.md`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
 $("question").addEventListener("keydown", e => {
-  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) $("askBtn").click();
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $("askBtn").click(); }
 });
+$("question").addEventListener("input", updateEstimate);
+
+// Copy / Retry buttons on each card
+$("rounds").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const { action, round, key } = btn.dataset;
+  const r = round === "final" ? finalResult : rounds[+round].results[key];
+  if (action === "copy") {
+    navigator.clipboard.writeText(r.answer || "").then(() => {
+      btn.textContent = "Copied"; setTimeout(() => (btn.textContent = "Copy"), 1200);
+    });
+  } else if (action === "retry") {
+    guard(() => runOne(round === "final" ? r.key : key, r, round !== "final" && rounds[+round].review));
+  }
+});
+
+$("resetUsageBtn").onclick = async () => {
+  if (!confirm("Clear your saved token history? (Limits from the CLIs are kept.)")) return;
+  await post("/api/usage/reset");
+  loadUsage();
+};
 
 function updateButtons() {
   const n = Object.keys(latestAnswers()).length;
   $("askBtn").disabled = busy;
-  $("reviewBtn").disabled = busy || n < 2;
+  $("reviewBtn").disabled = busy || reviewKeys().length < 2;
   $("finalBtn").disabled = busy || n < 1;
+  $("exportBtn").disabled = !rounds.length;
   $("resetBtn").disabled = busy;
+  $("stopBtn").hidden = !busy;
+}
+
+// ---------- token estimates ----------
+const estTokens = s => Math.ceil(s.length / 4);
+
+function updateEstimate() {
+  let text = "";
+  const keys = reviewKeys();
+  if (!busy && keys.length >= 2) {
+    const prev = latestAnswers();
+    const ctx = Object.fromEntries(keys.map(k => [k, prev[k]]));
+    const per = keys.map(k => estTokens(reviewPrompt(k, question, ctx)));
+    const total = per.reduce((a, b) => a + b, 0);
+    text = `Next review round: ≈ ${fmt(Math.round(total / keys.length))} tokens of discussion per model ` +
+      `(≈ ${fmt(total)} for ${keys.length} models), plus each tool's built-in instructions and the answers.`;
+  } else if (!busy && $("question").value.trim()) {
+    const n = selectedKeys().length;
+    text = `This question: ≈ ${fmt(estTokens($("question").value))} tokens × ${n} model${n === 1 ? "" : "s"}, plus each tool's built-in instructions and the answers.`;
+  }
+  $("estimate").textContent = text;
+}
+
+// ---------- usage panel ----------
+async function loadUsage() {
+  try { usageData = await (await fetch("/api/usage")).json(); } catch { return; }
+  renderUsage();
+}
+
+function fmt(n) {
+  n = Math.round(n || 0);
+  if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + "k";
+  return String(n);
+}
+
+function untilText(epoch) {
+  if (!epoch) return "";
+  let s = Math.max(0, epoch - Date.now() / 1000);
+  const d = Math.floor(s / 86400); s -= d * 86400;
+  const h = Math.floor(s / 3600); s -= h * 3600;
+  const m = Math.floor(s / 60);
+  return "resets in " + (d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`);
+}
+
+function agoText(epoch) {
+  const m = Math.round((Date.now() / 1000 - epoch) / 60);
+  return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+}
+
+function renderUsage() {
+  if (!usageData) return;
+  let todayTotal = 0;
+  $("usage").innerHTML = PROVIDERS.map(p => {
+    const u = usageData[p.key] || { models: {} };
+    let html = `<div class="usage-box" style="--c:${p.color}"><h3>${p.label}`;
+    html += u.limits ? `<small>updated ${agoText(u.limits.updated)}</small>` : "";
+    html += `</h3>`;
+    if (u.limits?.windows?.length) {
+      for (const w of u.limits.windows) {
+        const used = Math.min(100, w.used_percent), cls = used >= 90 ? "high" : used >= 70 ? "warn" : "";
+        html += `<div class="limit"><div class="limit-head"><b>${escapeHtml(w.label)}</b>
+          <span>${used}% used · <b>${Math.round((100 - used) * 10) / 10}% left</b></span></div>
+          <div class="meter"><i class="${cls}" style="width:${used}%"></i></div>
+          <div class="hint">${untilText(w.resets_at)}</div></div>`;
+      }
+    } else {
+      html += `<p class="note">Limits: ${p.noLimits}</p>`;
+    }
+    const models = Object.entries(u.models);
+    if (!models.length) {
+      html += `<p class="note">No answers yet.</p>`;
+    } else {
+      const cell = s => {
+        const tilde = s.estimated ? "~" : "";
+        return `<td title="${fmt(s.input)} in / ${fmt(s.output)} out">${tilde}${fmt(s.input + s.output)}` +
+          `<small>${s.requests} req</small></td>`;
+      };
+      html += `<table class="usage"><tr><th>Model (tokens)</th><th>Today</th><th>7 days</th><th>All time</th></tr>`;
+      let cost = 0;
+      for (const [name, m] of models) {
+        html += `<tr><td>${escapeHtml(name)}</td>${cell(m.today)}${cell(m.week)}${cell(m.all)}</tr>`;
+        todayTotal += m.today.input + m.today.output;
+        cost += m.today.cost_usd || 0;
+      }
+      html += `</table>`;
+      if (cost > 0) html += `<p class="note">Today ≈ $${cost.toFixed(2)} if paid at API prices (included in your subscription).</p>`;
+    }
+    return html + `</div>`;
+  }).join("");
+  const claudeWin = usageData.claude?.limits?.windows?.[0];
+  $("usageSummary").textContent = `· ${fmt(todayTotal)} tokens today` +
+    (claudeWin ? ` · Claude ${claudeWin.label.toLowerCase()}: ${Math.round(100 - claudeWin.used_percent)}% left` : "");
 }
 
 // ---------- rendering ----------
@@ -309,10 +502,14 @@ function md(text) {
   return `<div style="white-space:pre-wrap">${escapeHtml(text)}</div>`;
 }
 
-function cardHtml(key, r, isReview) {
+function cardHtml(key, r, isReview, roundId) {
   const p = byKey[key];
-  let meta = r.status === "running" ? `<span class="spinner"></span> thinking…`
-           : r.status === "done" ? `${r.seconds}s` : "failed";
+  let meta;
+  if (r.status === "running") meta = `<span class="spinner"></span> <span data-start="${r.start}">0s</span>`;
+  else if (r.status === "done") {
+    const u = r.usage, t = u?.estimated ? "~" : "";
+    meta = `${r.seconds}s` + (u ? ` · ${t}${fmt(u.input)} in · ${t}${fmt(u.output)} out` : "");
+  } else meta = "failed";
   let body = "";
   if (r.status === "error") body = `<div class="err">${escapeHtml(r.error)}</div>`;
   if (r.status === "done") {
@@ -320,35 +517,86 @@ function cardHtml(key, r, isReview) {
       body += `<details class="review"><summary>Review of the others</summary>${md(r.review)}</details>`;
     body += md(r.answer);
   }
+  let actions = "";
+  if (r.status !== "running") {
+    actions = `<div class="actions">` +
+      (r.status === "done" ? `<button class="small" data-action="copy" data-round="${roundId}" data-key="${key}">Copy</button>` : "") +
+      `<button class="small" data-action="retry" data-round="${roundId}" data-key="${key}" ${busy ? "disabled" : ""}>Retry</button></div>`;
+  }
+  const modelName = r.usage?.model && r.usage.model !== "default" ? `<span class="model-name">${escapeHtml(r.usage.model)}</span>` : "";
   return `<article class="card" style="--c:${p.color}">
-      <header><b>${p.label}</b><span>${meta}</span></header>
-      <div class="body">${body}</div></article>`;
+      <header><span><b>${p.label}</b>${modelName}</span><span class="meta">${meta}</span></header>
+      <div class="body">${body}</div>${actions}</article>`;
 }
 
 function render() {
   if (!rounds.length) {
     $("rounds").innerHTML = `<p class="empty">Answers will appear here.</p>`;
-    return updateButtons();
+  } else {
+    let html = `<div class="round"><h2>Question</h2><div class="card" style="--c:var(--line)"><div class="body">${md(question)}</div></div></div>`;
+    rounds.forEach((round, i) => {
+      html += `<div class="round"><h2>${round.title} <small>${round.note}</small></h2><div class="cols">` +
+        Object.entries(round.results).map(([k, r]) => cardHtml(k, r, round.review, i)).join("") + `</div></div>`;
+    });
+    if (finalResult) {
+      html += `<div class="round"><h2>Final answer <small>written by ${byKey[finalResult.key].label}</small></h2>` +
+        cardHtml(finalResult.key, finalResult, false, "final") + `</div>`;
+    }
+    // Keep open "Review" sections open across re-renders.
+    const open = [...document.querySelectorAll("details.review")].map(d => d.open);
+    $("rounds").innerHTML = html;
+    document.querySelectorAll("details.review").forEach((d, i) => { if (open[i]) d.open = true; });
+    tick();
   }
-  let html = `<div class="round"><h2>Question</h2><div class="card" style="--c:var(--line)"><div class="body">${md(question)}</div></div></div>`;
-  rounds.forEach((round, i) => {
-    html += `<div class="round"><h2>${round.title} <small>${round.note}</small></h2><div class="cols">` +
-      Object.entries(round.results).map(([k, r]) => cardHtml(k, r, i > 0)).join("") + `</div></div>`;
-  });
-  if (finalResult) {
-    html += `<div class="round"><h2>Final answer <small>written by ${byKey[finalResult.key].label}</small></h2>` +
-      cardHtml(finalResult.key, finalResult, false) + `</div>`;
-  }
-  // Keep open "Review" sections open across re-renders.
-  const open = [...document.querySelectorAll("details.review")].map(d => d.open);
-  $("rounds").innerHTML = html;
-  document.querySelectorAll("details.review").forEach((d, i) => { if (open[i]) d.open = true; });
   updateButtons();
+  saveSession();
+}
+
+// Live "thinking" timers, updated in place so answers aren't re-rendered every second.
+function tick() {
+  for (const el of document.querySelectorAll("[data-start]"))
+    el.textContent = Math.floor((Date.now() - +el.dataset.start) / 1000) + "s";
+}
+setInterval(tick, 1000);
+setInterval(renderUsage, 60000); // keep "resets in" fresh
+
+// ---------- keep the last discussion across page reloads ----------
+function saveSession() {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ question, rounds, finalResult })); } catch {}
+}
+function restoreSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    if (!s || !s.rounds?.length) return;
+    const fix = r => { if (r && r.status === "running") Object.assign(r, { status: "error", error: "Interrupted (page was reloaded)." }); };
+    s.rounds.forEach(rd => Object.values(rd.results).forEach(fix));
+    fix(s.finalResult);
+    ({ question, rounds, finalResult } = s);
+    $("question").value = question;
+  } catch {}
+}
+
+function toMarkdown() {
+  const label = (k, r) => byKey[k].label + (r.usage?.model && r.usage.model !== "default" ? ` (${r.usage.model})` : "");
+  let s = `# AI Council\n\n## Question\n\n${question}\n\n`;
+  rounds.forEach(rd => {
+    s += `## ${rd.title}: ${rd.note}\n\n`;
+    for (const [k, r] of Object.entries(rd.results)) {
+      s += `### ${label(k, r)}\n\n`;
+      if (r.status !== "done") { s += `_${r.error || "No answer"}_\n\n`; continue; }
+      if (rd.review && r.review) s += `#### Review\n\n${r.review}\n\n#### Improved answer\n\n`;
+      s += `${r.answer}\n\n`;
+    }
+  });
+  if (finalResult?.status === "done") s += `## Final answer (by ${label(finalResult.key, finalResult)})\n\n${finalResult.answer}\n\n`;
+  return s + `---\nGenerated with AI Council, developed by Mohammad Javad Amin (aminm@usi.ch)\n`;
 }
 
 buildModelPickers();
-checkStatus();
+restoreSession();
 render();
+checkStatus();
+loadUsage();
 </script>
 </body>
 </html>

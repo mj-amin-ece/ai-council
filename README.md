@@ -12,7 +12,12 @@ AI Council is a small local web app. It talks to each AI through its official co
 - **Choose your models.** Turn each AI on or off and pick a model from its dropdown (e.g. Opus, Sonnet, GPT-6.1 Sol, Gemini 3.1 Pro), or choose **Other…** to type any model name.
 - **Review & improve rounds.** Each model reads the others' latest answers, points out errors and missing points, admits where the others did better, and writes an improved answer. Run as many rounds as you like.
 - **Final answer.** Pick one model to merge everything into a single best answer, with a short list of points the models still disagree on.
-- **Safe by design.** The AI tools run in an empty temporary folder with tools disabled or read-only, so they only answer and never touch your files. The server only listens on your own computer (`127.0.0.1`).
+- **Token usage & limits.** Every answer shows its exact input/output tokens. The **Usage & limits** panel shows tokens per model for today, the last 7 days and all time. For Claude it also shows your real subscription limits (5-hour and weekly: % used, % left, time until reset).
+- **Token estimates.** Before you click, the page estimates how many tokens the next question or review round will send to each model.
+- **Lean prompts.** Claude and ChatGPT get a short assistant prompt instead of their built-in coding-agent instructions. That's about 10× fewer input tokens per Claude call and about 35% fewer per ChatGPT call, so your limits last longer.
+- **Stop, Retry, Copy.** Stop ends all running requests right away (so they stop using your quota). Every answer has Retry and Copy buttons.
+- **Export & restore.** Download the whole discussion as a Markdown file. The last discussion is restored if you reload the page.
+- **Safe by design.** The AI tools run in an empty temporary folder with tools disabled or read-only, so they only answer and never touch your files. The server only listens on your own computer (`127.0.0.1`) and rejects requests from other websites, so a web page you visit can't use your subscriptions.
 - **No dependencies.** The backend uses only the Python standard library, and the frontend is a single HTML file.
 
 ## How it works
@@ -41,7 +46,7 @@ You don't need all three. The app shows which ones are installed (green dot) and
 ## Getting started
 
 ```bash
-git clone https://github.com/<your-username>/ai-council.git
+git clone https://github.com/mj-amin-ece/ai-council.git
 cd ai-council
 python3 server.py
 ```
@@ -54,9 +59,19 @@ Then open **http://localhost:8765** in your browser.
 2. Type your question and click **Ask selected models** (or press <kbd>Cmd</kbd>+<kbd>Enter</kbd>).
 3. Click **Review & improve** to let them critique each other and improve. Repeat for more rounds.
 4. Choose who writes the final answer and click **Write final answer**.
-5. Click **New question** to start over.
+5. Click **Export** to save the discussion as Markdown, or **New question** to start over.
 
-Your model choices are remembered in the browser.
+Open **Usage & limits** to see your token use and remaining limits. Your model choices and the last discussion are remembered in the browser.
+
+### What usage information each AI provides
+
+| AI | Tokens per answer | Remaining subscription limit |
+|---|---|---|
+| Claude | Exact | Yes: 5-hour and weekly limits with reset time |
+| ChatGPT | Exact | Not reported by the Codex CLI (run `codex`, then `/status`) |
+| Gemini | Exact | Not reported by the Gemini CLI (Google uses daily request limits) |
+
+Token history is saved locally in `usage.json` (excluded from git). **Clear history** in the panel resets it.
 
 ## Customising
 
@@ -72,7 +87,8 @@ To use an API key instead of a CLI for one of the AIs, only that model's `ask_�
 ## Troubleshooting
 
 - **A model shows "not installed".** Install its CLI (see the table above), then restart `server.py` and refresh the page.
-- **"requires usage credits" or a rate-limit error.** Your subscription's limit for that model was reached. Choose a different model in the dropdown.
+- **"requires usage credits" or a rate-limit error.** Your subscription's limit for that model was reached. Choose a different model in the dropdown, or check **Usage & limits** to see when it resets.
+- **Gemini: "Please set an Auth method".** Run `gemini` once in Terminal and choose *Login with Google*.
 - **"model not found".** That model isn't available on your plan, or its name changed. Pick another one, or update the list in `server.py`.
 - **Slow answers.** Each CLI takes a few seconds to start, and review rounds send longer prompts. Faster models (Haiku, GPT-6 Luna, Gemini Flash) help.
 
@@ -80,9 +96,10 @@ To use an API key instead of a CLI for one of the AIs, only that model's `ask_�
 
 ```
 ai-council/
-├── server.py   # local web server and one adapter per AI CLI
+├── server.py   # local web server, one adapter per AI CLI, usage tracking
 ├── index.html  # the whole user interface
-└── README.md
+├── README.md
+└── usage.json  # your token history (created on first use, not committed)
 ```
 
 ---
